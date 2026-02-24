@@ -1,0 +1,32 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.idea/
+*.iml
+.vscode/settings.json
+.vscode/launch.json
+*.swp
+*.swo
+
+# Generated SDK output (each run creates a new directory)
+# Uncomment if you want to ignore generated SDKs:
+# output/
+
+# Node (if testing JS/TS generation)
+node_modules/
+npm-debug.log*
+
+# Java (if testing Java generation)
+target/
+*.class
+*.jar
+
+# Python (if testing Python generation)
+__pycache__/
+*.pyc
+*.egg-info/
+dist/
+build/
+.venv/
