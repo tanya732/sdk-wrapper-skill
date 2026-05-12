@@ -1,386 +1,227 @@
 # SDK Wrapper Skill
 
-A **GitHub Copilot Agent Skill** that auto-scaffolds framework-specific wrapper SDKs on top of any core SDK. Designed for SDK owners and maintainers who need to create framework integrations (e.g., Play Framework, Dropwizard, Fastify, Express, Django, ASP.NET) that leverage existing core SDKs.
+An agentic Claude Code skill that generates **production-ready, framework-specific wrapper SDKs** from any existing core SDK. Give it a base SDK and a target framework — it produces a complete, runnable project where the only user input is a `.env` file with credentials.
 
-## 🎯 What It Does
+## What It Does
 
-This skill acts as an interactive, multi-stage agent that:
+This skill runs a 7-stage autonomous pipeline:
 
-1. **Discovers** a core SDK's complete API surface from any repository
-2. **Analyzes** the target framework's patterns and conventions
-3. **Assesses** feasibility by mapping core features to framework idioms
-4. **Designs** the architecture with proper dependency management
-5. **Generates** complete source code, tests, and documentation
-6. **Plans** update strategies for ongoing maintenance
+1. **Discovery** — Reads the core SDK source and maps every public API, auth flow, and pattern
+2. **Target Analysis** — Profiles the target framework's DI, config, middleware, and async model
+3. **Feasibility** — Maps features 1:1, flags incompatibilities (async/sync mismatches, dependency conflicts)
+4. **Architecture** — Designs package structure, public API, and internal adapters
+5. **Code Generation** — Produces complete source code, build configs, and auto-configuration
+6. **Test Generation** — Creates unit + integration tests using framework-native test tools
+7. **Update Strategy** — Documents maintenance, versioning, and CI/CD recommendations
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Prerequisites
 
-- GitHub Copilot with Agent mode enabled
-- Access to the core SDK repository (public or private)
-- Knowledge of your target framework
+- [Claude Code](https://claude.ai/claude-code) CLI installed
+- The skill installed at `~/.claude/skills/sdk-wrapper/`
 
 ### Usage
 
-Open Copilot Chat in VS Code and say:
+In any terminal with Claude Code, simply describe what you want:
 
-```
-@workspace Use the SDK Wrapper Skill to generate a framework SDK.
-
-Core SDK: https://github.com/auth0/auth0-auth-java
-Target Framework: Play Framework 2.8
-Language: Java
+```bash
+claude "Generate a Micronaut wrapper SDK for https://github.com/auth0/auth0-java"
 ```
 
-The skill will guide you through each stage interactively.
+Or invoke the skill directly:
 
-## 📋 Stages
+```bash
+claude "/sdk-wrapper"
+```
 
-| Stage | Name                      | Output                  | Approval Required |
-| ----- | ------------------------- | ----------------------- | ----------------- |
-| 1     | Core SDK Discovery        | `discovery-report.md`   | ✅                |
-| 2     | Target Framework Analysis | `target-analysis.md`    | ✅                |
-| 3     | Feasibility Analysis      | `feasibility-report.md` | ✅                |
-| 4     | Architecture & Design     | `architecture.md`       | ✅                |
-| 5     | Code Generation           | Complete source tree    | ✅                |
-| 6     | Test Generation           | Complete test suite     | ✅                |
-| 7     | Update Strategy           | `update-strategy.md`    | ✅                |
+Then provide:
+- **Core SDK**: GitHub URL, local path, or package coordinates
+- **Target Framework**: Any supported framework (see below)
 
-## 🌍 Supported Languages & Frameworks
+The skill handles everything else automatically.
 
-### Core SDKs (Source)
+## Step-by-Step: Create a Framework SDK
 
-- **Java** — Maven/Gradle projects, sync and async patterns
-- **JavaScript/TypeScript** — npm packages, monorepos, ESM/CJS
-- **Python** — pip packages, async/sync
-- **.NET** — NuGet packages, async/await
-- **Go** — Go modules
-- **Any language** with a public Git repository
+### Step 1: Choose Your Inputs
 
-### Target Frameworks (Examples)
+| Input | Example |
+|-------|---------|
+| Core SDK | `https://github.com/auth0/auth0-java` |
+| Target Framework | Micronaut |
 
-- **Java:** Play Framework, Dropwizard, Spring Boot, Micronaut, Quarkus
-- **JavaScript:** Fastify, Express, Next.js, NestJS, Hono
-- **Python:** Django, Flask, FastAPI, Starlette
-- **.NET:** ASP.NET Core, Minimal APIs
-- **Go:** Gin, Echo, Fiber
+### Step 2: Invoke the Skill
 
-## 🔍 Key Features
+```
+Generate a Micronaut wrapper for the auth0-java SDK at https://github.com/auth0/auth0-java
+```
+
+### Step 3: Watch the Pipeline Run
+
+```
+[Stage 1/7] Discovery ........................ Done
+[Stage 2/7] Target Analysis .................. Done
+[Stage 3/7] Feasibility ...................... Done
+[Stage 4/7] Architecture ..................... Done
+[Stage 5/7] Code Generation .................. Done
+[Stage 6/7] Test Generation .................. Done
+[Stage 7/7] Update Strategy .................. Done
+```
+
+If the skill detects critical incompatibilities (e.g., async/sync mismatch), it pauses and asks you how to proceed.
+
+### Step 4: Run the Generated SDK
+
+```bash
+cd generated-project/example/
+cp .env.example .env
+# Fill in your credentials (clientId, clientSecret, domain, etc.)
+./gradlew run   # or: mvn exec:java / npm start / python main.py
+```
+
+That's it. The app runs.
+
+## What Gets Generated
+
+```
+auth0-micronaut/
+├── build.gradle.kts              # Complete build config with exact dependency versions
+├── settings.gradle.kts
+├── src/main/java/
+│   └── com/auth0/micronaut/
+│       ├── Auth0Configuration.java        # @ConfigurationProperties
+│       ├── Auth0Factory.java              # @Factory beans
+│       ├── Auth0Filter.java               # HTTP filter for auth
+│       └── Auth0ExceptionHandler.java     # Error mapping
+├── src/test/java/
+│   └── com/auth0/micronaut/
+│       ├── Auth0ConfigurationTest.java
+│       ├── Auth0FactoryTest.java
+│       └── Auth0FilterTest.java
+├── example/
+│   ├── build.gradle.kts
+│   ├── src/main/java/.../ExampleApp.java  # Working demo app
+│   ├── .env.example                       # ← Only thing user fills in
+│   └── README.md                          # 3-step run instructions
+├── README.md
+├── MAINTENANCE.md
+├── CHANGELOG.md
+└── LICENSE
+```
+
+## Supported Languages & Frameworks
+
+### Core SDKs (Input — any language)
+
+| Language | Build Tools Auto-Detected |
+|----------|--------------------------|
+| Java | Maven (`pom.xml`) or Gradle (`build.gradle`) |
+| JavaScript/TypeScript | npm, yarn, or pnpm |
+| Python | Poetry (`pyproject.toml`) or setuptools |
+| .NET | dotnet CLI (`.csproj`) |
+| Go | Go modules (`go.mod`) |
+
+### Target Frameworks (Output)
+
+| Language | Frameworks |
+|----------|-----------|
+| Java | Micronaut, Quarkus, Spring Boot, Play Framework, Dropwizard |
+| JavaScript | Express, Fastify, NestJS |
+| Python | Django, FastAPI, Flask |
+| .NET | ASP.NET Core |
+| Go | Gin, Echo, Fiber |
+
+## Key Features
+
+### Auto-Detection
+The skill automatically determines:
+- Build tool (Maven vs Gradle vs npm vs poetry)
+- Language version from build config
+- Framework version (latest stable)
+- Dependency conflicts and resolutions
 
 ### Anomaly Detection
+Flags issues before generating broken code:
+- Async/sync mismatches between core SDK and framework
+- Dependency version conflicts
+- Serialization library conflicts (Jackson vs Gson)
+- Thread-safety gaps
+- GraalVM/native-image incompatibilities
 
-Automatically detects and surfaces:
+### Zero-Config Example App
+Every generated wrapper includes a runnable example where:
+- ALL config comes from `.env` file (zero hardcoded values)
+- `.env.example` documents every variable with comments
+- README has 3 copy-paste commands to run
+- Demonstrates login, logout, protected routes, token handling
 
-- Async/sync mismatches between core SDK and target framework
-- Dependency conflicts
-- Configuration model incompatibilities
-- Thread-safety concerns
-- Serialization differences
+## Example Invocations
 
-### Feasibility Analysis
-
-For each core SDK feature, classifies as:
-
-- ✅ **Clean Fit** — Direct mapping to framework patterns
-- ⚠️ **Adaptation Needed** — Requires wrapper logic
-- ❌ **Incompatible** — Cannot be cleanly implemented
-
-For incompatible features, presents options:
-
-1. **Exclude** entirely with documentation
-2. **Implement with warnings** about limitations
-3. **Create custom adapter** solutions
-
-### Complete Package Generation
-
-- Source code with framework-idiomatic patterns
-- Comprehensive test suite (unit + integration)
-- README with quick start and examples
-- Build configuration (Maven, npm, pip, etc.)
-- CI/CD pipeline configuration
-- Migration guide templates
-- Changelog skeleton
-
-### Update Strategy
-
-- Version coupling between core and framework SDK
-- Breaking change detection guidance
-- Migration guide generation
-- Maintenance boundary definitions
-
-## 🏗 Architecture
-
+**Java SDK → Micronaut:**
 ```
-┌──────────────────────────────────────────────────┐
-│                  User (SDK Owner)                 │
-├──────────────────────────────────────────────────┤
-│              Copilot Agent Skill                  │
-│  ┌────────────┐  ┌─────────────┐  ┌───────────┐ │
-│  │  Discovery  │→│  Analysis   │→│  Design    │ │
-│  │  Engine     │  │  Engine     │  │  Engine    │ │
-│  └────────────┘  └─────────────┘  └───────────┘ │
-│  ┌────────────┐  ┌─────────────┐  ┌───────────┐ │
-│  │  Code Gen   │→│  Test Gen   │→│  Update    │ │
-│  │  Engine     │  │  Engine     │  │  Strategy  │ │
-│  └────────────┘  └─────────────┘  └───────────┘ │
-├──────────────────────────────────────────────────┤
-│          Anomaly Detection (Cross-cutting)        │
-├──────────────────────────────────────────────────┤
-│  Core SDK Repo ←──── GitHub API ────→ Framework  │
-│                                        Docs       │
-└──────────────────────────────────────────────────┘
+Generate a Micronaut wrapper for https://github.com/auth0/auth0-java
 ```
 
-## 📁 Generated SDK Structure
-
+**Java SDK → Quarkus:**
 ```
-auth0-{framework}/
-├── README.md
-├── CHANGELOG.md
-├── CONTRIBUTING.md
-├── MIGRATION_GUIDE.md
-├── LICENSE
-├── pom.xml / package.json / pyproject.toml
-├── src/
-│   ├── main/
-│   │   └── {language-specific source tree}
-│   └── test/
-│       └── {language-specific test tree}
-├── docs/
-│   ├── architecture.md
-│   ├── discovery-report.md
-│   ├── feasibility-report.md
-│   ├── target-analysis.md
-│   └── update-strategy.md
-└── .github/
-    └── workflows/
-        └── ci.yml
+Create a Quarkus integration SDK from the auth0-java-mvc-common library
 ```
 
-## 🧪 Testing the Skill
-
-After generating an SDK, test it by:
-
-1. Building the project: `mvn compile` / `npm run build` / etc.
-2. Running tests: `mvn test` / `npm test` / etc.
-3. Recording feedback in `feedback.md` for iteration
-
-## 📄 Feedback Template
-
-Create `feedback.md` to track where the skill fell short:
-
-```markdown
-# SDK Generation Feedback
-
-## Core SDK: [name]
-
-## Target Framework: [name]
-
-## Date: [date]
-
-### What Worked Well
-
--
-
-### What Fell Short
-
--
-
-### Missing Features
-
--
-
-### Incorrect Assumptions
-
--
-
-### Suggestions for Improvement
-
--
+**JavaScript SDK → Express:**
+```
+Generate an Express middleware wrapper for @auth0/auth0-spa-js
 ```
 
-## 🤝 Contributing
-
-This skill is iteratively developed. After testing:
-
-1. Record detailed feedback in `feedback.md`
-2. Identify pattern gaps
-3. Update the skill instructions
-4. Re-test with the same or different SDK/framework combination
-
-## 🧑‍💻 Example: Generating a Wrapper SDK
-
-This example shows how an SDK owner or developer can use the SDK Wrapper Skill to generate a Play Framework wrapper SDK for the core SDK `auth0-api-java` (from the `auth0-auth-java` monorepo).
-
-### 1. Start the Skill in Copilot Chat
-
-Open Copilot Chat in VS Code and enter:
-
+**Python SDK → FastAPI:**
 ```
-@workspace Use the SDK Wrapper Skill to generate a framework SDK.
-
-Core SDK: https://github.com/auth0/auth0-auth-java
-Target Framework: Play Framework 2.8
-Language: Java
-Key Use Case: JWT validation middleware
+Create a FastAPI integration from the auth0-python SDK
 ```
 
-The skill will guide you through each stage interactively, prompting for approval before proceeding.
+## How It Differs from ZeroToOneSDK
 
-### 2. Stage-by-Stage Workflow
+| | ZeroToOneSDK (Previous) | SDK Wrapper Skill (This) |
+|---|---|---|
+| Approach | Single-shot prompt generation | 7-stage pipeline with validation |
+| Accuracy | Low — hallucinated APIs | High — reads actual source code |
+| Build files | Often incomplete | Complete with exact versions |
+| Runnable? | Usually not | Yes, out of the box |
+| Anomaly detection | None | Catches conflicts before code gen |
+| User effort | Fix compilation errors manually | Just fill in `.env` |
 
-**Stage 1: Core SDK Discovery**
+## Project Structure
 
-- The skill analyzes the core SDK's API surface, patterns, and conventions.
-- Output: `discovery-report.md`
-- **Prompt Example:**
-  > Run Stage 1: Discover the core SDK at https://github.com/auth0/auth0-auth-java
-
-**Stage 2: Target Framework Analysis**
-
-- The skill asks for framework details and analyzes Play's lifecycle, DI, and middleware patterns.
-- Output: `target-analysis.md`
-- **Prompt Example:**
-  > Run Stage 2: Target framework is Play Framework 2.8, Java 11+, wrapper should provide JWT validation as Play action/middleware.
-
-**Stage 3: Feasibility Analysis & Feature Mapping**
-
-- The skill maps core SDK features to Play idioms, detects anomalies, and presents options for incompatible features.
-- Output: `feasibility-report.md`
-- **Prompt Example:**
-  > Run Stage 3: Map core SDK JWT validation to Play middleware. Highlight any incompatibilities.
-
-**Stage 4: Architecture & Design**
-
-- The skill proposes the wrapper SDK's structure, DI integration, and error mapping.
-- Output: `architecture.md`
-- **Prompt Example:**
-  > Run Stage 4: Design Play module structure for JWT validation using auth0-api-java.
-
-**Stage 5: Code Generation**
-
-- The skill generates the full source tree, including:
-  - `pom.xml` or `build.sbt`
-  - `JwtValidationAction.java` (Play action using core SDK)
-  - DI wiring
-  - README, docs, CI config
-- Output: Complete source tree
-- **Prompt Example:**
-  > Run Stage 5: Generate Play module code for JWT validation.
-
-**Stage 6: Test Generation**
-
-- The skill generates unit and integration tests for the wrapper SDK.
-- Output: Complete test suite
-- **Prompt Example:**
-  > Run Stage 6: Generate tests for JWT validation action.
-
-**Stage 7: Update & Migration Strategy**
-
-- The skill generates update and migration documentation.
-- Output: `update-strategy.md`, `MIGRATION_GUIDE.md`
-- **Prompt Example:**
-  > Run Stage 7: Generate update and migration docs.
-
-### 3. Example Output: Play JWT Validation Action
-
-The generated code will include a Play action that validates JWTs using the core SDK:
-
-```java
-// src/main/java/com/example/play/JwtValidationAction.java
-package com.example.play;
-
-import play.mvc.*;
-import java.util.concurrent.CompletionStage;
-import com.auth0.jwt.interfaces.DecodedJWT;
-import com.auth0.jwt.exceptions.JWTVerificationException;
-import com.auth0.jwt.JWTVerifier;
-
-public class JwtValidationAction extends Action.Simple {
-    private final JWTVerifier verifier;
-
-    public JwtValidationAction(JWTVerifier verifier) {
-        this.verifier = verifier;
-    }
-
-    @Override
-    public CompletionStage<Result> call(Http.Context ctx) {
-        String authHeader = ctx.request().getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            return CompletableFuture.completedFuture(Results.unauthorized("Missing token"));
-        }
-        String token = authHeader.substring("Bearer ".length());
-        try {
-            DecodedJWT jwt = verifier.verify(token);
-            ctx.args.put("jwt", jwt);
-            return delegate.call(ctx);
-        } catch (JWTVerificationException e) {
-            return CompletableFuture.completedFuture(Results.unauthorized("Invalid token"));
-        }
-    }
-}
+```
+sdk-wrapper-skill/
+├── README.md                    # This file
+├── EXECUTION_PLAYBOOK.md        # Detailed stage-by-stage guide
+├── feedback.md                  # Evaluation framework
+├── prompts/                     # Stage prompt templates
+│   ├── orchestrator.md
+│   ├── stage-1-discovery.md
+│   ├── stage-2-target-analysis.md
+│   ├── stage-3-feasibility.md
+│   ├── stage-4-architecture.md
+│   ├── stage-5-code-generation.md
+│   ├── stage-6-test-generation.md
+│   ├── stage-7-update-strategy.md
+│   └── anomaly-detection-rules.md
+└── docs/                        # Example reports and templates
+    ├── discovery-report.md
+    ├── stage-2-target-analysis.md
+    ├── stage-3-feasibility.md
+    ├── stage-4-architecture.md
+    └── examples/
 ```
 
-### 4. Approve Each Stage
+## Feedback & Iteration
 
-After each stage, review the generated artifact (report, code, or doc) and approve to continue. You can request changes or stop at any stage.
+After generating an SDK, test and provide feedback:
 
-### 5. Build, Test, and Iterate
+1. Build: `mvn compile` / `gradle build` / `npm run build`
+2. Test: `mvn test` / `gradle test` / `npm test`
+3. Run example app
+4. Record what worked and what didn't in `feedback.md`
 
-- Build the generated SDK: `mvn compile` or `sbt compile`
-- Run tests: `mvn test` or `sbt test`
-- Integrate the wrapper into your Play app
-- Provide feedback or iterate as needed
-
----
-
-This workflow ensures you generate a framework-idiomatic, anomaly-aware wrapper SDK with full documentation and test coverage, tailored to your use case and the core SDK's actual capabilities.
-
-## 🟢 How to Use This Skill in Your Own Repo (e.g., auth0-auth-java)
-
-1. **Open your target repo in VS Code.**
-   - Open the `auth0-auth-java` repository as your workspace.
-
-2. **Open Copilot Chat (or Copilot Agent) in VS Code.**
-
-3. **Start the Skill with a Natural Language Command:**
-   - Type this in Copilot Chat:
-
-     ```
-     @workspace Use the SDK Wrapper Skill to generate a framework SDK.
-
-     Core SDK: https://github.com/auth0/auth0-auth-java
-     Target Framework: Play Framework 2.8
-     Language: Java
-     Key Use Case: JWT validation middleware
-     ```
-
-   - Change the target framework, language, or use case as needed for your project.
-
-4. **Follow the Interactive Prompts:**
-   - The skill will guide you through each stage (discovery, analysis, design, code generation, etc.).
-   - After each stage, review the generated file or code and approve to continue.
-
-5. **Review and Approve Each Step:**
-   - You’re always in control. You can stop, ask for changes, or continue at each stage.
-
-6. **Build and Test the Generated SDK:**
-   - Use standard build commands (`mvn compile`, `mvn test`, etc.) in your repo.
-
-7. **Integrate the Wrapper SDK into Your App:**
-   - Use the generated Play module or middleware in your Play Framework app.
-
----
-
-**In Short:**
-
-- Open your repo in VS Code
-- Open Copilot Chat
-- Tell Copilot what you want (see the example command above)
-- Approve each step as Copilot generates code and docs
-- Build, test, and use your new wrapper SDK!
-
-## 📜 License
+## License
 
 MIT

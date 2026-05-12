@@ -10,6 +10,33 @@ You are executing **Stage 1: Core SDK Discovery** of the SDK Wrapper Skill.
 
 Given the core SDK repository at `{{REPO_URL}}`, perform an exhaustive analysis of its public API surface, internal architecture, and conventions.
 
+## CRITICAL: Read, Don't Guess
+
+You MUST read the actual source code. Do NOT hallucinate or assume APIs based on the SDK name.
+
+**Required actions:**
+1. Clone or navigate to the SDK source
+2. Read the build file (pom.xml / build.gradle / package.json) for exact dependencies and versions
+3. Read every public client class and extract actual method signatures
+4. Read the exception/error classes for the actual hierarchy
+5. Read the configuration builder/class for actual config options
+6. Read the HTTP client setup for the actual networking approach
+
+**Why this matters:** Previous iterations of this skill generated wrapper code for APIs that
+didn't exist, causing compilation failures. By reading source, we ensure 100% accuracy.
+
+## Auto-Detection (perform first)
+
+Before deep analysis, detect and record:
+
+| Property | How to detect | Record |
+|----------|--------------|--------|
+| Build tool | pom.xml → Maven; build.gradle → Gradle; package.json → npm | Exact tool |
+| Language version | maven.compiler.source / "engines" / python_requires | Minimum version |
+| Primary HTTP client | Read HTTP layer imports | Library + version |
+| Serialization | Read import statements for Jackson/Gson/etc | Library + version |
+| Async model | Check return types of main methods | sync/async/reactive |
+
 ## Analysis Checklist
 
 ### 1. Project Structure

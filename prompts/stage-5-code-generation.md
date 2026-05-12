@@ -2,13 +2,15 @@
 
 ## Trigger
 
-User has approved Stage 4 architecture design.
+Stage 4 architecture design is complete.
 
 ## System Prompt
 
 You are executing **Stage 5: Code Generation** of the SDK Wrapper Skill.
 
-Using the approved architecture (`docs/architecture.md`), generate the complete framework SDK source code. Every line of code must trace back to a decision in the architecture document.
+Using the architecture design, generate the **complete, compilable, runnable** framework SDK.
+The output must work out of the box — compile with a single command, tests must pass,
+and the example app must start with only a `.env` file from the user.
 
 ## Generation Order
 
@@ -16,155 +18,211 @@ Generate files in this order (dependencies first):
 
 ### Phase 1: Project Scaffolding
 
-1. **Build file** (`pom.xml`, `package.json`, `pyproject.toml`, etc.)
-   - Include all dependencies with exact versions
-   - Configure build plugins (compile, test, package, publish)
-   - Set up CI-friendly versioning
+1. **Build file** (`pom.xml`, `build.gradle.kts`, `package.json`, `pyproject.toml`)
+   - Include ALL dependencies with **exact versions** (not ranges)
+   - Configure all plugins (compile, test, package, publish)
+   - Framework dependency: `provided`/`peerDependency` scope
+   - Core SDK: exact version as compile dependency
 2. **Directory structure** (create all directories)
 3. **CI/CD configuration** (`.github/workflows/ci.yml`)
-4. **LICENSE** file
-5. **`.gitignore`** appropriate for language
+4. **LICENSE** file (match core SDK's license)
+5. **`.gitignore`** — MUST include `.env`
 
 ### Phase 2: Core Source Code
 
-6. **Configuration class** — reads framework config, validates, builds core SDK client
-7. **Module / Plugin class** — integrates with framework's DI/lifecycle system
-8. **Main client wrapper** — the primary public API entry point
+6. **Configuration class** — reads from environment variables / framework config
+   - All config from env vars (never hardcoded)
+   - Validates required values at startup
+   - Provides clear error messages for missing config
+7. **Module / Plugin class** — integrates with framework's DI/lifecycle
+8. **Main client wrapper** — primary public API entry point
 9. **Sub-client wrappers** (if core SDK has hierarchical clients)
-10. **Error mapping layer** — translates core SDK errors to framework errors
-11. **Middleware / Filters** — authentication, rate limiting, logging
+10. **Error mapping layer** — core SDK errors → framework-idiomatic responses
+11. **Middleware / Filters** — authentication, token validation
 
-### Phase 3: Utilities & Helpers
+### Phase 3: Example Application
 
-12. **Response adapters** — convert core SDK responses to framework response types
-13. **Configuration helpers** — env var loading, validation, defaults
-14. **Logging integration** — bridge core SDK logging to framework logging
+12. **Example app build file** (separate from SDK build)
+13. **Example app source** — demonstrates ALL main features:
+    - Login flow
+    - Logout
+    - Protected routes (require authentication)
+    - Token handling (refresh, validation)
+    - User info retrieval
+    - Error handling display
+14. **`.env.example`** — EVERY variable with comments:
+    ```env
+    # ===========================================
+    # Auth0 Configuration
+    # Get these from: Auth0 Dashboard → Applications → Your App
+    # ===========================================
+
+    # Your Auth0 tenant domain (e.g., dev-abc123.us.auth0.com)
+    AUTH0_DOMAIN=your-tenant.auth0.com
+
+    # Application Client ID
+    AUTH0_CLIENT_ID=your-client-id
+
+    # Application Client Secret (keep this safe!)
+    AUTH0_CLIENT_SECRET=your-client-secret
+
+    # Token Issuer URL
+    AUTH0_ISSUER=https://your-tenant.auth0.com/
+
+    # API Audience (if using API authorization)
+    AUTH0_AUDIENCE=https://your-api-identifier
+
+    # ===========================================
+    # Application Configuration
+    # ===========================================
+
+    # Port the example app runs on
+    APP_PORT=8080
+
+    # Base URL of your application
+    APP_BASE_URL=http://localhost:8080
+
+    # OAuth callback URL (must match Auth0 dashboard settings)
+    AUTH0_CALLBACK_URL=http://localhost:8080/callback
+
+    # URL to redirect to after logout
+    AUTH0_LOGOUT_URL=http://localhost:8080
+    ```
+15. **Example app README.md** — exactly 3 steps:
+    ```markdown
+    # Example App
+
+    ## Run in 3 Steps
+
+    ### 1. Configure
+    ```bash
+    cp .env.example .env
+    # Edit .env with your Auth0 credentials
+    ```
+
+    ### 2. Install
+    ```bash
+    ../gradlew build   # or: npm install / pip install -e .
+    ```
+
+    ### 3. Run
+    ```bash
+    ../gradlew run     # or: npm start / python main.py
+    ```
+
+    Open http://localhost:8080
+    ```
 
 ### Phase 4: Documentation
 
-15. **README.md** with:
-    - Installation instructions (dependency coordinates)
-    - Quick start (minimum viable configuration)
-    - Full configuration reference
-    - Usage examples for every public method
+16. **README.md** with:
+    - One-line description
+    - Installation (one command)
+    - Quick start (copy-paste-ready)
+    - Full configuration reference table
+    - Usage examples for main features
     - Error handling guide
-    - Migration guide (from raw core SDK)
-16. **CHANGELOG.md** skeleton
-17. **CONTRIBUTING.md**
+    - Migration guide (from raw core SDK usage)
+17. **CHANGELOG.md** — initial entry
+18. **MAINTENANCE.md** — update strategy (generated in Stage 7)
 
 ## Code Quality Rules
 
 ### Must Follow
 
-- [ ] Every public method has documentation (Javadoc, JSDoc, docstring, XML doc)
-- [ ] Every public method validates its inputs
-- [ ] Every error path is handled explicitly (no swallowed exceptions)
-- [ ] Configuration keys have sensible defaults where possible
-- [ ] Thread-safety is explicitly addressed (documented or enforced)
-- [ ] No hard-coded values — everything configurable
-- [ ] Logging at appropriate levels (DEBUG for flow, WARN for anomalies, ERROR for failures)
+- [ ] ALL configuration comes from environment variables or framework config (NEVER hardcoded)
+- [ ] Build file has exact dependency versions (not ranges like `[2.0,3.0)`)
+- [ ] Every public method has documentation (Javadoc, JSDoc, docstring)
+- [ ] Every error path is handled (no swallowed exceptions)
+- [ ] Thread-safety addressed (singleton clients, executor for blocking in async contexts)
+- [ ] Logging at appropriate levels (DEBUG for flow, WARN for issues, ERROR for failures)
+- [ ] .gitignore excludes `.env`, build outputs, IDE files
 
 ### Must Avoid
 
-- [ ] No copy-paste from core SDK source (wrapper pattern only)
-- [ ] No direct dependency on core SDK internals (only public API)
-- [ ] No framework version-specific hacks without version guards
-- [ ] No blocking calls in async contexts (or vice versa)
-- [ ] No mutable shared state without synchronization
+- [ ] NO hardcoded credentials, domains, or client IDs anywhere
+- [ ] NO copy-paste from core SDK (delegate via composition only)
+- [ ] NO dependency on core SDK internals (only public API)
+- [ ] NO blocking calls in async/reactive contexts without proper bridging
+- [ ] NO version ranges in primary dependencies
 
-### Style Matching
+### Build Tool Auto-Detection
 
-- Match the core SDK's code style where possible (indentation, naming, comment style)
-- Follow the target framework's conventions for framework-specific code
-- When in conflict, prefer the framework's conventions (users of the wrapper are framework developers)
+Use the build tool detected in Stage 1:
 
-## README Template
+| Core SDK uses | Framework prefers | Decision |
+|---------------|-------------------|----------|
+| Maven | Maven | Maven |
+| Maven | Gradle | Gradle (framework wins) |
+| Gradle | Gradle | Gradle |
+| Gradle | Maven | Gradle (already compatible) |
+| npm | npm | npm |
+| poetry | poetry | poetry |
 
-```markdown
-# {SDK Name}
+When framework convention differs from core SDK, **framework convention wins**
+(users of the wrapper are framework developers).
 
-{One-line description}: A {Framework} integration for the [{Core SDK Name}]({core-sdk-url}).
+### .env Loading Patterns
 
-[![Maven Central](badge-url)](...) <!-- or npm, PyPI, etc. -->
-[![CI](badge-url)](...)
-[![License](badge-url)](...)
+**Java (Micronaut):**
+```java
+// In Application.java or Factory
+import io.github.cdimascio.dotenv.Dotenv;
 
-## Installation
-
-{Package manager instructions}
-
-## Quick Start
-
-{Minimum viable example — 5-10 lines}
-
-## Configuration
-
-{Full configuration reference table}
-
-| Key | Type | Default | Required | Description |
-| --- | ---- | ------- | -------- | ----------- |
-
-## Usage
-
-### {Feature 1}
-
-{Code example}
-
-### {Feature 2}
-
-{Code example}
-
-...
-
-## Error Handling
-
-{Error mapping table and handling guide}
-
-## Migration from Raw {Core SDK}
-
-{Side-by-side comparison of raw vs wrapped usage}
-
-## API Reference
-
-{Link to generated API docs or inline reference}
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## License
-
-{License type} — see [LICENSE](LICENSE).
+Dotenv dotenv = Dotenv.configure().ignoreIfMissing().load();
+// Properties are available via System.getenv() or Micronaut's @Value
 ```
 
-## Output Format
-
-Generate all files in the project directory. After generation, provide a summary:
-
-```markdown
-## Generated Files Summary
-
-| File                     | Purpose               | Lines |
-| ------------------------ | --------------------- | ----- |
-| pom.xml                  | Build configuration   | N     |
-| src/main/.../Module.java | Framework integration | N     |
-| ...                      | ...                   | N     |
-
-**Total files:** N
-**Total lines:** N
+**Java (Quarkus):**
+```java
+// Quarkus auto-loads .env — no code needed
+// Access via @ConfigProperty(name = "AUTH0_DOMAIN")
 ```
+
+**Java (Spring Boot):**
+```java
+// In application.properties:
+// spring.config.import=optional:file:.env[.properties]
+// Or use spring-dotenv dependency
+```
+
+**JavaScript (Express/Fastify):**
+```javascript
+import 'dotenv/config';
+// process.env.AUTH0_DOMAIN is now available
+```
+
+**Python (FastAPI):**
+```python
+from pydantic_settings import BaseSettings
+
+class Settings(BaseSettings):
+    auth0_domain: str
+    auth0_client_id: str
+
+    class Config:
+        env_file = ".env"
+```
+
+## Output Verification
+
+After generating all files, verify:
+
+1. **Build file is complete** — All deps, all plugins, correct versions
+2. **No TODO placeholders** — Every file is complete
+3. **Example app is self-contained** — Has its own build file, can run independently
+4. **`.env.example` lists every variable** — Nothing undocumented
+5. **`.gitignore` excludes `.env`** — Secrets never committed
+6. **README quick start works** — Copy-paste commands are correct
 
 ## Completion Signal
 
-> **Stage 5 Complete.** I've generated the complete source code.
->
-> **Summary:** [N files, N lines of code]
->
-> Please review:
->
-> 1. Does the code compile? (`mvn compile` / `npm run build` / etc.)
-> 2. Does the public API look right?
-> 3. Is the README accurate and helpful?
-> 4. Any methods that need signature changes?
->
-> Once approved, we'll proceed to **Stage 6: Test Generation**.
+```
+[Stage 5/7] Code Generation .................. Done
+
+Generated: {N} files ({N} source + {N} config + {N} docs)
+Build command: {command}
+Example app: {output-dir}/example/
+
+Proceeding to Stage 6: Test Generation...
+```
