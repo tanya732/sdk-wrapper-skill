@@ -25,9 +25,21 @@ You MUST read the actual source code. Do NOT hallucinate or assume APIs based on
 **Why this matters:** Previous iterations of this skill generated wrapper code for APIs that
 didn't exist, causing compilation failures. By reading source, we ensure 100% accuracy.
 
-## Auto-Detection (perform first)
+## Monorepo Detection (perform first)
 
-Before deep analysis, detect and record:
+If the repo contains multiple modules (check `settings.gradle`, root `pom.xml` with `<modules>`, or `workspaces` in package.json):
+
+1. List all modules and their purpose
+2. Identify the **base/core module** — the one with NO framework dependencies (no Spring, Micronaut, Express, etc.)
+3. Use that module as the source for discovery
+4. Skip modules that are already framework wrappers (e.g., `auth0-spring-boot`)
+5. If ambiguous, ask the user which module to wrap
+
+**Example:** `auth0-auth-java` repo contains:
+- `auth0` → base SDK (wrap this)
+- `auth0-spring-boot` → already a Spring wrapper (skip)
+
+## Auto-Detection (perform next)
 
 | Property | How to detect | Record |
 |----------|--------------|--------|
