@@ -1,12 +1,31 @@
 # SDK Generation Feedback
 
+Use this template after each SDK generation to track quality and improve the skill.
+
 ## Session Details
 
-- **Core SDK:** auth0-java v3.0.0
-- **Target Framework:** [e.g., Play Framework 2.8]
-- **Language:** [e.g., Java]
+- **Core SDK:** [e.g., auth0-java v2.12.0]
+- **Target Framework:** [e.g., Micronaut 4.3.0]
+- **Language:** [e.g., Java 17]
+- **Build Tool Auto-Detected:** [e.g., Gradle — correct? Y/N]
 - **Date:** [YYYY-MM-DD]
-- **Skill Version:** 1.0.0
+- **Invocation:** [e.g., `claude "Generate a Micronaut wrapper for auth0-java"`]
+
+---
+
+## Quick Checks (Pass/Fail)
+
+| Check | Pass? | Notes |
+|-------|-------|-------|
+| Project compiles (`./gradlew build`) | | |
+| Tests pass (`./gradlew test`) | | |
+| Example app starts (after .env setup) | | |
+| .env.example has ALL required variables | | |
+| .gitignore excludes .env | | |
+| No hardcoded credentials anywhere | | |
+| README quick-start steps are correct | | |
+| Build file has exact versions (no ranges) | | |
+| Auto-detected build tool was correct | | |
 
 ---
 
@@ -14,169 +33,118 @@
 
 ### Stage 1: Core SDK Discovery
 
-**Accuracy:** [1-5] /5
-**Completeness:** [1-5] /5
+**Did it READ actual source or guess?** [Read / Guessed]
+**API surface accuracy:** [1-5] /5
 
-**What worked well:**
-
--
-
-**What was incorrect:**
-
--
-
-**What was missing:**
-
+**APIs it got wrong (hallucinated or missing):**
 -
 
 ---
 
 ### Stage 2: Target Framework Analysis
 
-**Accuracy:** [1-5] /5
-**Completeness:** [1-5] /5
+**Framework version correct?** [Y/N]
+**Build tool choice correct?** [Y/N]
+**.env loading approach correct?** [Y/N]
 
-**What worked well:**
-
--
-
-**What was incorrect:**
-
--
-
-**What was missing:**
-
+**What it got wrong:**
 -
 
 ---
 
-### Stage 3: Feasibility Analysis
+### Stage 3: Feasibility Assessment
 
-**Accuracy:** [1-5] /5
-**Completeness:** [1-5] /5
-
-**What worked well:**
-
+**Anomalies detected correctly?** [Y/N]
+**False positives (flagged but not real):**
 -
-
-**Incorrect classifications:**
-
--
-
-**Missing anomalies:**
-
+**False negatives (missed but should have flagged):**
 -
 
 ---
 
-### Stage 4: Architecture Design
+### Stage 4: Architecture
 
-**Accuracy:** [1-5] /5
-**Completeness:** [1-5] /5
+**Package structure idiomatic?** [Y/N]
+**Config approach correct?** [Y/N]
 
-**What worked well:**
-
--
-
-**Design flaws found:**
-
--
-
-**Missing considerations:**
-
+**Design issues found after building:**
 -
 
 ---
 
 ### Stage 5: Code Generation
 
-**Compilability:** [Yes / No / Partial]
-**Accuracy:** [1-5] /5
-**Idiomatic:** [1-5] /5
-
-**What worked well:**
-
--
-
-**Compile errors:**
-
+**Compiles first try?** [Y/N]
+**Compile errors (if any):**
 -
 
 **Non-idiomatic code:**
-
 -
 
-**Missing files/classes:**
-
+**Missing files:**
 -
 
 ---
 
 ### Stage 6: Test Generation
 
-**Tests pass:** [Yes / No / Partial]
-**Coverage quality:** [1-5] /5
-
-**What worked well:**
-
--
-
-**Failing tests:**
-
+**Tests pass first try?** [Y/N]
+**Test failures (if any):**
 -
 
 **Missing test scenarios:**
-
 -
 
 ---
 
 ### Stage 7: Update Strategy
 
-**Practicality:** [1-5] /5
-
-**What worked well:**
-
--
-
-**Impractical suggestions:**
-
--
+**CI workflows valid YAML?** [Y/N]
+**Version strategy practical?** [Y/N]
 
 ---
 
-## Overall Assessment
+## Example App Assessment
 
-### Strengths
-
-1.
-2.
-3.
-
-### Weaknesses
-
-1.
-2.
-3.
-
-### Critical Improvements Needed
-
-1.
-2.
-3.
-
-### Innovation Opportunities
-
-1.
-2.
-3.
+| Feature | Works? | Notes |
+|---------|--------|-------|
+| Login flow | | |
+| Logout | | |
+| Protected routes | | |
+| Token refresh | | |
+| Error pages | | |
+| Missing .env error message | | |
 
 ---
 
-## Action Items for Next Iteration
+## Overall Score
 
-| Priority | Improvement | Affected Stage | Expected Impact |
-| -------- | ----------- | -------------- | --------------- |
-| P0       |             |                |                 |
-| P1       |             |                |                 |
-| P2       |             |                |                 |
+| Metric | Score |
+|--------|-------|
+| Accuracy (APIs correct) | /5 |
+| Completeness (nothing missing) | /5 |
+| Runnability (works out of box) | /5 |
+| Idiomatic (feels framework-native) | /5 |
+| **Overall** | **/20** |
+
+---
+
+## Improvements for Next Iteration
+
+| Priority | Issue | Fix |
+|----------|-------|-----|
+| P0 (blocker) | | |
+| P1 (should fix) | | |
+| P2 (nice to have) | | |
+
+---
+
+## Comparison with Previous Attempt
+
+| Metric | ZeroToOneSDK | This Run | Delta |
+|--------|-------------|----------|-------|
+| Compiles? | No | | |
+| Tests pass? | No | | |
+| Example runs? | No | | |
+| API accuracy | ~40% | | |
+| Overall | 5/20 | | |
