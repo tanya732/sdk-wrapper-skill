@@ -20,6 +20,7 @@ Generate files in this order (dependencies first):
 
 1. **Build file** (`pom.xml`, `build.gradle.kts`, `package.json`, `pyproject.toml`)
    - Include ALL dependencies with **exact versions** (not ranges)
+   - **CRITICAL: Use the exact core SDK version from Stage 1 discovery** (e.g., `1.0.0-beta.1`, NOT `1.0.0`). Never truncate or "clean up" version strings. Verify it resolves from the public registry before generating.
    - Configure all plugins (compile, test, package, publish)
    - Framework dependency: `provided`/`peerDependency` scope
    - Core SDK: exact version as compile dependency

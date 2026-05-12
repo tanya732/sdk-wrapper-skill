@@ -70,10 +70,13 @@ Before starting Stage 1, determine these automatically:
 | What | How to detect | Fallback |
 |------|--------------|----------|
 | Build tool | Check for pom.xml / build.gradle / package.json / pyproject.toml | Ask user |
+| **Core SDK version** | gradle.properties `VERSION_NAME`/`version`, pom.xml `<version>`, package.json `"version"` | Verify on Maven Central/npm/PyPI |
 | Language version | Read build config (maven.compiler.source, engines, python_requires) | Use framework minimum |
 | Framework version | Use latest stable release | Ask user if ambiguous |
 | .env loading | Match framework convention (see table below) | dotenv library |
 | Output directory | User specifies, or `./{sdk-name}-{framework}/` | Ask user |
+
+> **⚠️ Version Rule:** Always use the EXACT version string (including `-beta.X`, `-SNAPSHOT`, `-RC.X` suffixes) in all generated build files. Never truncate. Verify it resolves from the public package registry before generating code.
 
 ### .env Loading by Framework
 

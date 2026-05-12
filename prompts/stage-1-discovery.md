@@ -44,10 +44,21 @@ If the repo contains multiple modules (check `settings.gradle`, root `pom.xml` w
 | Property | How to detect | Record |
 |----------|--------------|--------|
 | Build tool | pom.xml → Maven; build.gradle → Gradle; package.json → npm | Exact tool |
+| **SDK version** | gradle.properties (`VERSION_NAME`/`version`), pom.xml `<version>`, build.gradle `version = '...'`, package.json `"version"` | **Exact version string** |
 | Language version | maven.compiler.source / "engines" / python_requires | Minimum version |
 | Primary HTTP client | Read HTTP layer imports | Library + version |
 | Serialization | Read import statements for Jackson/Gson/etc | Library + version |
 | Async model | Check return types of main methods | sync/async/reactive |
+
+### CRITICAL: SDK Version Resolution
+
+The core SDK's exact version MUST be extracted and used in all generated build files.
+
+1. Check the SDK's version declaration in its build file/properties
+2. **Never truncate version suffixes** — use `1.0.0-beta.1` exactly, not `1.0.0`
+3. **Verify the version exists on the public registry** (Maven Central, npm, PyPI) before using it
+4. If the version is not published, configure a composite/local build and document it
+5. Record the exact version in the discovery report output for use in Stage 5
 
 ## Analysis Checklist
 
