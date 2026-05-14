@@ -66,6 +66,11 @@ Only pause if critical anomalies are detected in Stage 3.
 [Stage 7: Update Strategy] ──── Maintenance docs
          │
          ▼
+[Stage 8: Build Verification] ── Full clean build → if fails → diagnose → fix → retry
+         │                        Self-healing loop (max 3 retries per error)
+         │                        Only asks user if stuck
+         │
+         ▼
 [DONE] ──── Build is GREEN. User runs: cp .env.example .env → fill in → run
 ```
 
@@ -114,6 +119,7 @@ Before starting Stage 1, determine these automatically:
 | 5 | Approved architecture | **Compiling source + passing tests on disk** |
 | 6 | (Optional) Green build from Stage 5 | Additional integration/edge-case tests |
 | 7 | Green build | MAINTENANCE.md + docs |
+| 8 | All files generated | **Verified GREEN clean build (self-healing)** |
 
 ## Pause Conditions
 
@@ -193,20 +199,24 @@ This makes debugging trivial — you never have to hunt through 10+ files for th
 At each stage transition, output:
 
 ```
-[Stage N/7] Stage Name ........................ Done
-[Stage N+1/7] Next Stage Name ................. In Progress
+[Stage N/8] Stage Name ........................ Done
+[Stage N+1/8] Next Stage Name ................. In Progress
 ```
 
-At completion:
+At completion (after Stage 8 passes):
 
 ```
+[Stage 8/8] Build Verification ............... Done ✓
+
+════════════════════════════════════════════
 SDK Generation Complete!
 
-Output: ./auth0-micronaut/
-Files: 15 source + 5 test + 3 config
+Output: ./{project-name}/
+Build: GREEN (all tests pass)
 
 To run:
-  cd auth0-micronaut/example
+  cd {project-name}/example
   cp .env.example .env   # Fill in your credentials
-  ../gradlew run         # Start the app
+  {run command}
+════════════════════════════════════════════
 ```
