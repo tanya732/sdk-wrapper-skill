@@ -8,124 +8,147 @@ Stage 4 architecture design is complete.
 
 You are executing **Stage 5: Code Generation** of the SDK Wrapper Skill.
 
-Using the architecture design, generate the **complete, compilable, runnable** framework SDK.
-The output must work out of the box — compile with a single command, tests must pass,
-and the example app must start with only a `.env` file from the user.
+Using the architecture design, generate the framework SDK **incrementally with continuous verification**. After each phase, compile/build to catch errors immediately — do not accumulate errors across phases.
 
-## Generation Order
+## CRITICAL: Incremental Generation with Verification
 
-Generate files in this order (dependencies first):
+**Do NOT generate all code at once.** Generate in phases, verifying each phase compiles before moving to the next. This catches errors (wrong imports, missing deps, API mismatches) one at a time instead of stacking 10+ errors at the end.
 
-### Phase 1: Project Scaffolding
+```
+Phase 1: Build file → verify deps resolve
+Phase 2: Source files → compile after each file
+Phase 3: Example app → compile
+Phase 4: Tests → run tests
+Phase 5: Documentation
+```
 
-1. **Build file** (`pom.xml`, `build.gradle.kts`, `package.json`, `pyproject.toml`)
-   - Include ALL dependencies with **exact versions** (not ranges)
-   - **CRITICAL: Use the exact core SDK version from Stage 1 discovery** (e.g., `1.0.0-beta.1`, NOT `1.0.0`). Never truncate or "clean up" version strings. Verify it resolves from the public registry before generating.
-   - Configure all plugins (compile, test, package, publish)
-   - Framework dependency: `provided`/`peerDependency` scope
-   - Core SDK: exact version as compile dependency
-2. **Directory structure** (create all directories)
-3. **CI/CD configuration** (`.github/workflows/ci.yml`)
-4. **LICENSE** file (match core SDK's license)
-5. **`.gitignore`** — MUST include `.env`
+If any phase fails, FIX IT before moving to the next. Never proceed with a broken build.
 
-### Phase 2: Core Source Code
+---
 
-6. **Configuration class** — reads from environment variables / framework config
-   - All config from env vars (never hardcoded)
-   - Validates required values at startup
-   - Provides clear error messages for missing config
-7. **Module / Plugin class** — integrates with framework's DI/lifecycle
-8. **Main client wrapper** — primary public API entry point
-9. **Sub-client wrappers** (if core SDK has hierarchical clients)
-10. **Error mapping layer** — core SDK errors → framework-idiomatic responses
-11. **Middleware / Filters** — authentication, token validation
+## Phase 1: Build File + Scaffolding
 
-### Phase 3: Example Application
+Generate these files:
+1. **Build file** (`pom.xml`, `build.gradle`, `package.json`, `pyproject.toml`)
+   - ALL dependencies with exact versions (not ranges)
+   - **Use the exact core SDK version from Stage 1** (e.g., `1.0.0-beta.1`, NOT `1.0.0`)
+   - Configure all plugins (compile, test, package)
+   - Core SDK as direct dependency (it IS published — verified in Stage 1)
+2. **Directory structure** (create all source directories)
+3. **`.gitignore`** — MUST include `.env`
+4. **LICENSE** (match core SDK)
 
-12. **Example app build file** (separate from SDK build)
-13. **Example app source** — demonstrates ALL main features:
-    - Login flow
-    - Logout
-    - Protected routes (require authentication)
-    - Token handling (refresh, validation)
-    - User info retrieval
-    - Error handling display
-14. **`.env.example`** — EVERY variable with comments:
-    ```env
-    # ===========================================
-    # Auth0 Configuration
-    # Get these from: Auth0 Dashboard → Applications → Your App
-    # ===========================================
+### ✅ CHECKPOINT: Verify dependencies resolve
 
-    # Your Auth0 tenant domain (e.g., dev-abc123.us.auth0.com)
-    AUTH0_DOMAIN=your-tenant.auth0.com
+```bash
+# Java/Gradle
+./gradlew dependencies --configuration compileClasspath
 
-    # Application Client ID
-    AUTH0_CLIENT_ID=your-client-id
+# Java/Maven
+mvn dependency:resolve
 
-    # Application Client Secret (keep this safe!)
-    AUTH0_CLIENT_SECRET=your-client-secret
+# JavaScript
+npm install
 
-    # Token Issuer URL
-    AUTH0_ISSUER=https://your-tenant.auth0.com/
+# Python
+pip install -e ".[dev]"
+```
 
-    # API Audience (if using API authorization)
-    AUTH0_AUDIENCE=https://your-api-identifier
+**If this fails:** The dependency version is wrong or the artifact doesn't exist. Fix the build file. Do NOT proceed.
 
-    # ===========================================
-    # Application Configuration
-    # ===========================================
+---
 
-    # Port the example app runs on
-    APP_PORT=8080
+## Phase 2: Source Code (one file at a time)
 
-    # Base URL of your application
-    APP_BASE_URL=http://localhost:8080
+Generate source files in dependency order. **Compile after EACH file** to catch import errors immediately.
 
-    # OAuth callback URL (must match Auth0 dashboard settings)
-    AUTH0_CALLBACK_URL=http://localhost:8080/callback
+**Order:**
+1. **Configuration class** (config mapping / properties)
+2. **Producer / Factory** (creates core SDK beans)
+3. **Data classes** (principal, identity, request objects)
+4. **Error mapping** (exception mapper / error handler)
+5. **Main mechanism** (filter, middleware, authentication mechanism)
 
-    # URL to redirect to after logout
-    AUTH0_LOGOUT_URL=http://localhost:8080
-    ```
-15. **Example app README.md** — exactly 3 steps:
-    ```markdown
-    # Example App
+### ✅ CHECKPOINT: Compile after each file
 
-    ## Run in 3 Steps
+```bash
+# Java/Gradle
+./gradlew compileJava
 
-    ### 1. Configure
-    ```bash
-    cp .env.example .env
-    # Edit .env with your Auth0 credentials
-    ```
+# Java/Maven
+mvn compile
 
-    ### 2. Install
-    ```bash
-    ../gradlew build   # or: npm install / pip install -e .
-    ```
+# JavaScript
+npm run build   # or: npx tsc --noEmit
 
-    ### 3. Run
-    ```bash
-    ../gradlew run     # or: npm start / python main.py
-    ```
+# Python
+python -c "import your_package"
+```
 
-    Open http://localhost:8080
-    ```
+**If compilation fails after a file:**
+1. Read the error message — it tells you exactly what's wrong
+2. Common causes: wrong import path, wrong method signature, missing type
+3. Fix the file that caused the error
+4. Re-compile to confirm the fix
+5. Only then proceed to the next file
 
-### Phase 4: Documentation
+---
 
-16. **README.md** with:
-    - One-line description
-    - Installation (one command)
-    - Quick start (copy-paste-ready)
-    - Full configuration reference table
-    - Usage examples for main features
-    - Error handling guide
-    - Migration guide (from raw core SDK usage)
-17. **CHANGELOG.md** — initial entry
-18. **MAINTENANCE.md** — update strategy (generated in Stage 7)
+## Phase 3: Example Application
+
+Generate the example app:
+1. **Example build file** (depends on the wrapper library)
+2. **Example source** — minimal app demonstrating main features:
+   - Public endpoint (no auth)
+   - Protected endpoint (any valid token)
+   - Scoped endpoint (requires specific permission)
+3. **`.env.example`** — every required variable with comments
+4. **Example README.md** — exactly 3 steps: configure, install, run
+
+### ✅ CHECKPOINT: Example compiles
+
+```bash
+# Java/Gradle (multi-module)
+./gradlew :example:compileJava
+
+# JavaScript
+cd example && npm install && npm run build
+
+# Python
+cd example && pip install -r requirements.txt
+```
+
+---
+
+## Phase 4: Tests
+
+Generate tests using **plain unit tests** (not container tests) wherever possible.
+
+1. **Configuration tests** — verify config mapping works
+2. **Producer/factory tests** — verify beans are created correctly
+3. **Data mapping tests** — verify claims → roles, identity building
+4. **Error mapping tests** — verify exceptions → HTTP responses
+
+### ✅ CHECKPOINT: Tests pass
+
+```bash
+./gradlew test   # or: npm test / pytest
+```
+
+**If tests fail:**
+1. Read the failure — is it a missing dep, wrong assertion, or actual bug?
+2. Fix the issue (add dep, fix test, or fix source)
+3. Re-run until GREEN
+4. Only then proceed
+
+---
+
+## Phase 5: Documentation
+
+Generate ONLY after all code compiles and tests pass:
+1. **README.md** — installation, configuration reference, usage examples
+2. **CHANGELOG.md** — initial entry
+3. **MAINTENANCE.md** — update strategy (generated in Stage 7)
 
 ## Code Quality Rules
 
@@ -217,25 +240,31 @@ class Settings(BaseSettings):
         env_file = ".env"
 ```
 
-## Output Verification
+## Completion Criteria
 
-After generating all files, verify:
+Stage 5 is complete ONLY when ALL of these are true:
 
-1. **Build file is complete** — All deps, all plugins, correct versions
-2. **No TODO placeholders** — Every file is complete
-3. **Example app is self-contained** — Has its own build file, can run independently
-4. **`.env.example` lists every variable** — Nothing undocumented
-5. **`.gitignore` excludes `.env`** — Secrets never committed
-6. **README quick start works** — Copy-paste commands are correct
+- [ ] `./gradlew compileJava` (or equivalent) passes with zero errors
+- [ ] `./gradlew :example:compileJava` (or equivalent) passes
+- [ ] `./gradlew test` passes (all tests green)
+- [ ] `.env.example` lists every required variable
+- [ ] `.gitignore` excludes `.env`
+- [ ] No TODO placeholders in any file
+- [ ] README quick-start commands are correct
 
 ## Completion Signal
 
 ```
-[Stage 5/7] Code Generation .................. Done
+[Stage 5/7] Code Generation .................. Done ✓
 
-Generated: {N} files ({N} source + {N} config + {N} docs)
-Build command: {command}
-Example app: {output-dir}/example/
+Verification:
+  ✓ Dependencies resolve
+  ✓ Source compiles ({N} files)
+  ✓ Example compiles
+  ✓ Tests pass ({N} tests)
 
-Proceeding to Stage 6: Test Generation...
+Generated: {output-dir}/
+Proceeding to Stage 7: Update Strategy...
 ```
+
+**Note:** With incremental verification, Stage 5 now subsumes Stage 6 (tests are generated and verified as part of Phase 4). The separate Stage 6 prompt remains available for adding MORE tests later but is no longer a hard prerequisite.

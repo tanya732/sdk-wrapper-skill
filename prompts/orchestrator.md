@@ -31,13 +31,14 @@ Only pause if critical anomalies are detected in Stage 3.
          ▼
 ┌─── Auto-Detection ───────────────────────┐
 │ • Build tool (Maven/Gradle/npm/poetry)   │
+│ • SDK version (verify on registry)       │
 │ • Language version (from build config)   │
 │ • Framework version (latest stable)      │
 │ • .env loading mechanism                 │
 └──────────────────────────────────────────┘
          │
          ▼
-[Stage 1: Discovery] ──── Read actual source code
+[Stage 1: Discovery] ──── Read actual source code, extract exact version
          │
          ▼
 [Stage 2: Target Analysis] ──── Profile framework idioms
@@ -51,17 +52,26 @@ Only pause if critical anomalies are detected in Stage 3.
 [Stage 4: Architecture] ──── Design package structure + example app
          │
          ▼
-[Stage 5: Code Generation] ──── Complete, compilable project
+[Stage 5: Code Generation] ──── INCREMENTAL: generate → compile → fix → repeat
+         │                       Phase 1: Build file → verify deps resolve
+         │                       Phase 2: Source → compile after each file
+         │                       Phase 3: Example → compile
+         │                       Phase 4: Tests → run until green
+         │                       Phase 5: Documentation
          │
          ▼
-[Stage 6: Test Generation] ──── Tests that pass
+[Stage 6: Additional Tests] ──── (optional) Add integration/edge-case tests
          │
          ▼
-[Stage 7: Update Strategy] ──── Maintenance docs + CI
+[Stage 7: Update Strategy] ──── Maintenance docs
          │
          ▼
-[DONE] ──── User runs: cp .env.example .env → fill in → run
+[DONE] ──── Build is GREEN. User runs: cp .env.example .env → fill in → run
 ```
+
+### Key Principle: Never Proceed with a Broken Build
+
+The old approach was "generate everything, then compile at the end." This stacks errors and makes debugging painful. The new approach compiles after EVERY file. If it breaks, you fix it immediately — when the cause is obvious (you just wrote one file) instead of hunting through 10+ files for the problem.
 
 ## Auto-Detection Rules
 
@@ -97,13 +107,13 @@ Before starting Stage 1, determine these automatically:
 
 | Stage | Requires | Produces |
 |-------|----------|----------|
-| 1 | Core SDK URL/path | Discovery report (in memory) |
-| 2 | Discovery data + target framework | Framework profile (in memory) |
+| 1 | Core SDK URL/path | Discovery report (version, APIs, deps) |
+| 2 | Discovery data + target framework | Framework profile |
 | 3 | Discovery + framework profile | Feature matrix + anomaly report |
 | 4 | Feasibility (all decisions resolved) | Architecture design |
-| 5 | Approved architecture | Complete source tree on disk |
-| 6 | Generated source (compilable) | Test suite on disk |
-| 7 | Generated tests | MAINTENANCE.md + CI workflows |
+| 5 | Approved architecture | **Compiling source + passing tests on disk** |
+| 6 | (Optional) Green build from Stage 5 | Additional integration/edge-case tests |
+| 7 | Green build | MAINTENANCE.md + docs |
 
 ## Pause Conditions
 
@@ -156,27 +166,18 @@ Every generated project MUST include:
 | **Tests pass** | 6 | Run test command. Fix until green. Do not declare done otherwise. |
 | Example app has zero hardcoded config | 7 | Everything from environment/.env |
 
-## Verification Loop (MANDATORY)
+## Verification Approach
 
-The skill is **generate → verify → fix → verify**, not **generate → declare done**.
+Verification is NOT a post-generation step — it is EMBEDDED in generation. Stage 5 compiles after every file.
 
-After Stage 5 (code generation) and Stage 6 (test generation):
+**The rule:** You cannot write the next file until the current file compiles. You cannot declare Stage 5 done until tests pass.
 
-1. **Run the build** (`./gradlew build` / `npm run build` / etc.)
-2. If it fails → read the error output, identify the root cause, fix, re-run
-3. **Run the tests** (`./gradlew test` / `npm test` / etc.)
-4. If tests fail → read the failure, fix the source or test, re-run
-5. Repeat until build and tests are GREEN
-6. Only then declare completion
+**When something fails:**
+1. Read the error message — it tells you exactly what's wrong
+2. The cause is always the file you just wrote (since everything before it already compiled)
+3. Fix that one file, re-compile, proceed
 
-**Never skip verification.** Never declare success based on "it should compile" or "this looks right." The only proof is a passing build.
-
-**Common root causes when builds fail:**
-- Wrong dependency version (read the actual error — it names what's missing)
-- Incorrect import path (compare against what Stage 1 discovered)
-- API mismatch (method signature doesn't match what you called)
-
-**Fix strategy:** Read the error message literally. It tells you exactly what's wrong. Don't guess — read and fix.
+This makes debugging trivial — you never have to hunt through 10+ files for the problem.
 
 ## Error Recovery
 
