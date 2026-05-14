@@ -78,6 +78,8 @@ Before starting Stage 1, determine these automatically:
 
 > **⚠️ Version Rule:** Always use the EXACT version string (including `-beta.X`, `-SNAPSHOT`, `-RC.X` suffixes) in all generated build files. Never truncate. Verify it resolves from the public package registry before generating code.
 
+> **⚠️ Publish Status Rule:** Never assume a monorepo module isn't published independently. Always check the registry. If the artifact exists on Maven Central/npm/PyPI, depend on it directly — do NOT work around it with exclusions, composite builds, or depending on a parent module.
+
 ### .env Loading by Framework
 
 | Framework | Package | Config |
@@ -143,13 +145,38 @@ Every generated project MUST include:
 | Gate | Stage | Rule |
 |------|-------|------|
 | Source code read (not guessed) | 1 | Must read actual files from SDK |
-| Build tool detected | 1 | Must identify from project files |
-| No critical anomalies unresolved | 3 | Block until user decides |
+| Exact SDK version extracted | 1 | Must match published version (including `-beta.1`, `-RC.2`, etc.) |
+| Import paths match discovery | 5 | All imports must use paths from Stage 1 — never guess package structure |
 | Build file has exact versions | 5 | No version ranges for primary deps |
 | .env.example is complete | 5 | Every required variable documented |
 | .gitignore excludes .env | 5 | Never commit secrets |
-| Tests reference correct frameworks | 6 | Must use framework test utilities |
-| Example app has zero hardcoded config | 5 | Everything from environment/.env |
+| No critical anomalies unresolved | 3 | Block until user decides |
+| **Build compiles** | 5→6 | Run build command. Fix until green. Do not proceed otherwise. |
+| Tests are plain unit tests | 6 | No container test for logic testable in isolation |
+| **Tests pass** | 6 | Run test command. Fix until green. Do not declare done otherwise. |
+| Example app has zero hardcoded config | 7 | Everything from environment/.env |
+
+## Verification Loop (MANDATORY)
+
+The skill is **generate → verify → fix → verify**, not **generate → declare done**.
+
+After Stage 5 (code generation) and Stage 6 (test generation):
+
+1. **Run the build** (`./gradlew build` / `npm run build` / etc.)
+2. If it fails → read the error output, identify the root cause, fix, re-run
+3. **Run the tests** (`./gradlew test` / `npm test` / etc.)
+4. If tests fail → read the failure, fix the source or test, re-run
+5. Repeat until build and tests are GREEN
+6. Only then declare completion
+
+**Never skip verification.** Never declare success based on "it should compile" or "this looks right." The only proof is a passing build.
+
+**Common root causes when builds fail:**
+- Wrong dependency version (read the actual error — it names what's missing)
+- Incorrect import path (compare against what Stage 1 discovered)
+- API mismatch (method signature doesn't match what you called)
+
+**Fix strategy:** Read the error message literally. It tells you exactly what's wrong. Don't guess — read and fix.
 
 ## Error Recovery
 

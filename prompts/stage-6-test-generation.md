@@ -10,6 +10,21 @@ You are executing **Stage 6: Test Generation** of the SDK Wrapper Skill.
 
 Generate a comprehensive test suite for the framework SDK. Tests must cover: unit tests, integration tests, and edge cases. The test suite should give maintainers confidence to merge PRs and release versions.
 
+## CRITICAL: Test Simplicity Principle
+
+**Prefer plain unit tests over framework container tests wherever possible.**
+
+- Configuration tests → instantiate the config library directly, not a full app container
+- Producer/factory tests → instantiate the class directly, inject mocks
+- Data mapping tests (identity, principal, claims) → pure unit tests
+- Error mapping tests → instantiate the mapper, call it directly
+
+**Only use framework container/integration tests for:**
+- End-to-end HTTP request flow (filter/middleware actually intercepting requests)
+- Tests that verify beans are auto-registered correctly
+
+**Why:** Container tests pull in the entire framework runtime, dramatically expanding the dependency surface. They are slower, more brittle, and fail for reasons unrelated to your wrapper logic (missing transitive deps, config conflicts, port binding). Keep the blast radius small — 80% of wrapper behavior can be verified with plain unit tests that have zero framework dependencies.
+
 ## Test Strategy
 
 ### Layer 1: Unit Tests (Mock Core SDK)
