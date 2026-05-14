@@ -138,6 +138,7 @@ Generate files in this order (dependencies first):
 - [ ] Thread-safety addressed (singleton clients, executor for blocking in async contexts)
 - [ ] Logging at appropriate levels (DEBUG for flow, WARN for issues, ERROR for failures)
 - [ ] .gitignore excludes `.env`, build outputs, IDE files
+- [ ] **Import paths match EXACTLY what was discovered in Stage 1** — never guess package paths
 
 ### Must Avoid
 
@@ -146,6 +147,17 @@ Generate files in this order (dependencies first):
 - [ ] NO dependency on core SDK internals (only public API)
 - [ ] NO blocking calls in async/reactive contexts without proper bridging
 - [ ] NO version ranges in primary dependencies
+
+### Build File Completeness
+
+**Principle:** Every dependency that will be loaded at compile time or test runtime MUST be explicitly declared. Do not assume transitive dependencies will be available — framework BOMs often exclude or override them.
+
+**How to verify:** After writing the build file, trace the execution path of each test class:
+1. What classes does the test instantiate directly?
+2. What do those classes load at construction time (static initializers, field types)?
+3. Are any of those transitively-pulled libraries excluded by the framework BOM?
+
+If in doubt, declare explicitly. A redundant dependency declaration is harmless; a missing one breaks the build.
 
 ### Build Tool Auto-Detection
 

@@ -50,15 +50,18 @@ If the repo contains multiple modules (check `settings.gradle`, root `pom.xml` w
 | Serialization | Read import statements for Jackson/Gson/etc | Library + version |
 | Async model | Check return types of main methods | sync/async/reactive |
 
-### CRITICAL: SDK Version Resolution
+### CRITICAL: SDK Version & Publish Status
 
-The core SDK's exact version MUST be extracted and used in all generated build files.
+The core SDK's exact version MUST be extracted and verified.
 
 1. Check the SDK's version declaration in its build file/properties
 2. **Never truncate version suffixes** — use `1.0.0-beta.1` exactly, not `1.0.0`
-3. **Verify the version exists on the public registry** (Maven Central, npm, PyPI) before using it
-4. If the version is not published, configure a composite/local build and document it
-5. Record the exact version in the discovery report output for use in Stage 5
+3. **Verify the version exists on the public registry** (Maven Central, npm, PyPI) — fetch the artifact page to confirm
+4. If it IS published → use it as a direct dependency. **Do NOT assume a module isn't published just because it lives in a monorepo.** Monorepo modules are frequently published independently.
+5. Only if verification CONFIRMS it's not published → configure a composite/local build and document it
+6. Record the exact version and publish status in the discovery report for use in Stage 5
+
+**Common mistake:** Seeing `auth0-api-java` inside a monorepo alongside `auth0-springboot-api` and concluding it's "not published separately." WRONG — check the registry. If it's there, depend on it directly.
 
 ## Analysis Checklist
 
