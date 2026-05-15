@@ -4,15 +4,16 @@ An agentic Claude Code skill that generates **production-ready, framework-specif
 
 ## What It Does
 
-This skill runs a 7-stage autonomous pipeline:
+This skill runs an 8-stage autonomous pipeline:
 
-1. **Discovery** — Reads the core SDK source and maps every public API, auth flow, and pattern
+1. **Discovery** — Reads the core SDK source, extracts exact version, maps every public API
 2. **Target Analysis** — Profiles the target framework's DI, config, middleware, and async model
 3. **Feasibility** — Maps features 1:1, flags incompatibilities (async/sync mismatches, dependency conflicts)
 4. **Architecture** — Designs package structure, public API, and internal adapters
-5. **Code Generation** — Produces complete source code, build configs, and auto-configuration
-6. **Test Generation** — Creates unit + integration tests using framework-native test tools
+5. **Code Generation** — Incremental: generates one file at a time, compiles after each, fixes immediately
+6. **Test Generation** — Plain unit tests first, integration tests only where needed
 7. **Update Strategy** — Documents maintenance, versioning, and CI/CD recommendations
+8. **Build Verification** — Full clean build with self-healing loop (diagnose → fix → retry until GREEN)
 
 ## Quick Start
 
@@ -59,13 +60,14 @@ Generate a Micronaut wrapper for the auth0-java SDK at https://github.com/auth0/
 ### Step 3: Watch the Pipeline Run
 
 ```
-[Stage 1/7] Discovery ........................ Done
-[Stage 2/7] Target Analysis .................. Done
-[Stage 3/7] Feasibility ...................... Done
-[Stage 4/7] Architecture ..................... Done
-[Stage 5/7] Code Generation .................. Done
-[Stage 6/7] Test Generation .................. Done
-[Stage 7/7] Update Strategy .................. Done
+[Stage 1/8] Discovery ........................ Done ✓
+[Stage 2/8] Target Analysis .................. Done ✓
+[Stage 3/8] Feasibility ...................... Done ✓
+[Stage 4/8] Architecture ..................... Done ✓
+[Stage 5/8] Code Generation .................. Done ✓ (compiles)
+[Stage 6/8] Test Generation .................. Done ✓ (tests pass)
+[Stage 7/8] Update Strategy .................. Done ✓
+[Stage 8/8] Build Verification ............... Done ✓ (clean build GREEN)
 ```
 
 If the skill detects critical incompatibilities (e.g., async/sync mismatch), it pauses and asks you how to proceed.
@@ -181,12 +183,13 @@ Create a FastAPI integration from the auth0-python SDK
 
 | | ZeroToOneSDK (Previous) | SDK Wrapper Skill (This) |
 |---|---|---|
-| Approach | Single-shot prompt generation | 7-stage pipeline with validation |
+| Approach | Single-shot generation | 8-stage pipeline with incremental verification |
 | Accuracy | Low — hallucinated APIs | High — reads actual source code |
-| Build files | Often incomplete | Complete with exact versions |
-| Runnable? | Usually not | Yes, out of the box |
+| Build files | Often incomplete | Complete with exact versions (verified on registry) |
+| Runnable? | Usually not | Yes — self-healing loop guarantees GREEN build |
 | Anomaly detection | None | Catches conflicts before code gen |
-| User effort | Fix compilation errors manually | Just fill in `.env` |
+| Error handling | User fixes manually | Skill auto-diagnoses and fixes (up to 3 retries) |
+| User effort | Hours of debugging | Just fill in `.env` |
 
 ## Project Structure
 
@@ -204,6 +207,7 @@ sdk-wrapper-skill/
 │   ├── stage-5-code-generation.md
 │   ├── stage-6-test-generation.md
 │   ├── stage-7-update-strategy.md
+│   ├── stage-8-build-verification.md
 │   └── anomaly-detection-rules.md
 └── docs/                        # Example reports and templates
     ├── discovery-report.md
